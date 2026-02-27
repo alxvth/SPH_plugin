@@ -1,0 +1,4 @@
+[submodule "third_party/SpatialHierarchyLibrary"]
+	path = third_party/SpatialHierarchyLibrary
+	url = git@github.com:alxvth/SPH.git
+	branch = main
