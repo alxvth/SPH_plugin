@@ -19,7 +19,9 @@
 #include <hdi/data/map_mem_eff.h>
 
 #include <algorithm>
+#include <cassert>
 #include <limits>
+#include <tuple>
 
 using namespace sph;
 
@@ -169,7 +171,7 @@ void RefineAction::refine()
         {
             std::vector<float> initialData(numInitialDataDimensions * numImagePoints, 0.f);
             imgColoredByEmb->setData(std::move(initialData), numInitialDataDimensions);
-            events().notifyDatasetDataChanged(imgColoredByEmb);
+            mv::events().notifyDatasetDataChanged(imgColoredByEmb);
         }
 
         auto& refinedRecolorImage = _refinedRecolorImages.emplace_back(mv::data().createDataset<Images>("Images", "Scatter colors", imgColoredByEmb));
@@ -189,7 +191,7 @@ void RefineAction::refine()
 
         refinedRecolorImage->setMaskData(imageMask);
 
-        events().notifyDatasetDataChanged(refinedRecolorImage);
+        mv::events().notifyDatasetDataChanged(refinedRecolorImage);
 
         // populate data sets: resized embedding by represented data points
         auto& refinedRepresentedSizeData = _refinedRepresentedSizes.emplace_back(mv::data().createDataset<Points>("Points", "Represented Data Size", refinedEmbedding));
@@ -206,7 +208,7 @@ void RefineAction::refine()
             }
 
             refinedRepresentedSizeData->setData(std::move(representedDataPoints), 1);
-            events().notifyDatasetDataChanged(refinedRepresentedSizeData);
+            mv::events().notifyDatasetDataChanged(refinedRepresentedSizeData);
         }
 
         // populate data set: non-zero redined transition matrix entries
@@ -225,7 +227,7 @@ void RefineAction::refine()
             }
 
             refinedTransitionEntries->setData(std::move(transitionEntries), 1);
-            events().notifyDatasetDataChanged(refinedTransitionEntries);
+            mv::events().notifyDatasetDataChanged(refinedTransitionEntries);
         }
 
         // populate data sets: average images
@@ -240,11 +242,11 @@ void RefineAction::refine()
             std::vector<float> initialAvgData(inputData.getNumPoints() * inputData.getNumDimensions(), 0);
             avgComponentDataSuper->setData(avgDataSuperpixels, inputData.getNumDimensions());
             avgComponentDataSuper->setDimensionNames(inputDataset->getDimensionNames());
-            events().notifyDatasetDataChanged(avgComponentDataSuper);
+            mv::events().notifyDatasetDataChanged(avgComponentDataSuper);
 
             avgComponentDataPixel->setData(std::move(avgDataPixels), inputData.getNumDimensions());
             avgComponentDataPixel->setDimensionNames(inputDataset->getDimensionNames());
-            events().notifyDatasetDataChanged(avgComponentDataPixel);
+            mv::events().notifyDatasetDataChanged(avgComponentDataPixel);
 
             avgComponentDataPixelImg->setType(ImageData::Type::Stack);
             avgComponentDataPixelImg->setNumberOfImages(inputData.getNumDimensions());
@@ -253,7 +255,7 @@ void RefineAction::refine()
 
             avgComponentDataPixelImg->setMaskData(imageMask);
 
-            events().notifyDatasetDataChanged(avgComponentDataPixelImg);
+            mv::events().notifyDatasetDataChanged(avgComponentDataPixelImg);
         }
 
         // Add selection mappings
