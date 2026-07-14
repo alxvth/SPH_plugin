@@ -8,6 +8,7 @@
 #include <PointData/PointData.h>
 
 #include <actions/PluginTriggerAction.h>
+#include <CoreInterface.h>
 
 #include <sph/utils/CommonDefinitions.hpp>
 #include <sph/utils/Embedding.hpp>
@@ -91,7 +92,7 @@ void SPHPlugin::init()
     // Set initial data (default 2 dimensions, all points at (0,0) )
     {
         outputDataset->setData(initialData.data(), _data.numPoints, numInitialDataDimensions);
-        events().notifyDatasetDataChanged(outputDataset);
+        mv::events().notifyDatasetDataChanged(outputDataset);
     }
 
     // Create image hierarchy dataset
@@ -100,7 +101,7 @@ void SPHPlugin::init()
 
         std::vector<float> tempData(static_cast<size_t>(_data.numPoints), 0);
         _superpixelComponents->setData(std::move(tempData), 1);
-        events().notifyDatasetDataChanged(_superpixelComponents);
+        mv::events().notifyDatasetDataChanged(_superpixelComponents);
 
         _superpixelImage = mv::data().createDataset<Images>("Images", "Superpixel images", _superpixelComponents);
 
@@ -109,7 +110,7 @@ void SPHPlugin::init()
         _superpixelImage->setImageSize(_imgSize);
         _superpixelImage->setNumberOfComponentsPerPixel(1);
 
-        events().notifyDatasetDataChanged(_superpixelImage);
+        mv::events().notifyDatasetDataChanged(_superpixelImage);
     }
 
     // Get copy of input data
@@ -126,7 +127,7 @@ void SPHPlugin::init()
     {
         _dataColoredByEmb = mv::data().createDataset<Points>("Points", "Scatter colors", outputDataset);
         _dataColoredByEmb->setData(initialData.data(), _data.numPoints, numInitialDataDimensions);
-        events().notifyDatasetDataChanged(_dataColoredByEmb);
+        mv::events().notifyDatasetDataChanged(_dataColoredByEmb);
 
         _imgColoredByEmb = mv::data().createDataset<Images>("Images", "Scatter colors", _dataColoredByEmb);
 
@@ -135,7 +136,7 @@ void SPHPlugin::init()
         _imgColoredByEmb->setImageSize(_imgSize);
         _imgColoredByEmb->setNumberOfComponentsPerPixel(1);
 
-        events().notifyDatasetDataChanged(_imgColoredByEmb);
+        mv::events().notifyDatasetDataChanged(_imgColoredByEmb);
     }
 
     // Init avg pixel data and image
@@ -144,7 +145,7 @@ void SPHPlugin::init()
         _avgComponentDataPixel = mv::data().createDataset<Points>("Points", "Average Data (Pixel)", outputDataset);
         _avgComponentDataPixel->setData(std::move(initialAvgData), _data.numDimensions);
         _avgComponentDataPixel->setDimensionNames(_inputData->getDimensionNames());
-        events().notifyDatasetDataChanged(_avgComponentDataPixel);
+        mv::events().notifyDatasetDataChanged(_avgComponentDataPixel);
 
         _avgComponentDataPixelImg = mv::data().createDataset<Images>("Images", "Average Data (Image)", _avgComponentDataPixel);
 
@@ -153,7 +154,7 @@ void SPHPlugin::init()
         _avgComponentDataPixelImg->setImageSize(_imgSize);
         _avgComponentDataPixelImg->setNumberOfComponentsPerPixel(1);
 
-        events().notifyDatasetDataChanged(_avgComponentDataPixelImg);
+        mv::events().notifyDatasetDataChanged(_avgComponentDataPixelImg);
     }
 
     // Init embedding point meta data
@@ -161,31 +162,31 @@ void SPHPlugin::init()
         std::vector<float> initialPointData(_data.numPoints, 0);
         _representSizeDataset = mv::data().createDataset<Points>("Points", "Represented Data Size", outputDataset);
         _representSizeDataset->setData(initialPointData.data(), _data.numPoints, 1);
-        events().notifyDatasetDataChanged(_representSizeDataset);
+        mv::events().notifyDatasetDataChanged(_representSizeDataset);
 
         _notMergedNotesDataset = mv::data().createDataset<Points>("Points", "Not Merged Nodes", outputDataset);
         _notMergedNotesDataset->setData(initialPointData.data(), _data.numPoints, 1);
-        events().notifyDatasetDataChanged(_notMergedNotesDataset);
+        mv::events().notifyDatasetDataChanged(_notMergedNotesDataset);
 
         _randomWalkPointSim = mv::data().createDataset<Points>("Points", "Random Walk ProbDist", outputDataset);
         _randomWalkPointSim->setData(initialPointData.data(), _data.numPoints, 1);
-        events().notifyDatasetDataChanged(_randomWalkPointSim);
+        mv::events().notifyDatasetDataChanged(_randomWalkPointSim);
         
         initialPointData.resize(_data.numPoints * _data.numDimensions, 0);
         _avgComponentDataSuper = mv::data().createDataset<Points>("Points", "Average Data (Superpixel)", outputDataset);
         _avgComponentDataSuper->setData(initialPointData.data(), _data.numPoints, _data.numDimensions);
         _avgComponentDataSuper->setDimensionNames(_inputData->getDimensionNames());
-        events().notifyDatasetDataChanged(_avgComponentDataSuper);
+        mv::events().notifyDatasetDataChanged(_avgComponentDataSuper);
     }
 
     // Connect selection mappings
-    connect(&_inputData,                &Dataset<Points>::dataSelectionChanged,         this, &SPHPlugin::onSelectionInInputData);
-    connect(&_output[0],                &Dataset<DatasetImpl>::dataSelectionChanged,    this, &SPHPlugin::onSelectionInEmbedding);
-    connect(&_dataColoredByEmb,         &Dataset<Points>::dataSelectionChanged,         this, &SPHPlugin::onSelectionInImgColoredByEmb);
-    connect(&_superpixelComponents,     &Dataset<Points>::dataSelectionChanged,         this, &SPHPlugin::onSelectionInSuperPixelComponents);
-    connect(&_avgComponentDataPixel,    &Dataset<Points>::dataSelectionChanged,         this, &SPHPlugin::onSelectionInPixelAverages);
+    connect(&_inputData,                &mv::Dataset<Points>::dataSelectionChanged,             this, &SPHPlugin::onSelectionInInputData);
+    connect(&_output[0],                &mv::Dataset<mv::DatasetImpl>::dataSelectionChanged,    this, &SPHPlugin::onSelectionInEmbedding);
+    connect(&_dataColoredByEmb,         &mv::Dataset<Points>::dataSelectionChanged,             this, &SPHPlugin::onSelectionInImgColoredByEmb);
+    connect(&_superpixelComponents,     &mv::Dataset<Points>::dataSelectionChanged,             this, &SPHPlugin::onSelectionInSuperPixelComponents);
+    connect(&_avgComponentDataPixel,    &mv::Dataset<Points>::dataSelectionChanged,             this, &SPHPlugin::onSelectionInPixelAverages);
 
-    connect(&_inputData, &Dataset<Points>::dataChanged, this, []() { 
+    connect(&_inputData, &mv::Dataset<Points>::dataChanged, this, []() {
         Log::warn("Input data changed. This well NOT be reflected in the computation or output of this plugin. If you want that to happen, implement it.");
         });
 
@@ -239,10 +240,10 @@ void SPHPlugin::init()
         }
 
         _superpixelComponents->setData(std::move(componentIDs), numLevels);
-        events().notifyDatasetDataChanged(_superpixelComponents);
+        mv::events().notifyDatasetDataChanged(_superpixelComponents);
 
         _superpixelImage->setNumberOfImages(static_cast<uint32_t>(numLevels));
-        events().notifyDatasetDataChanged(_superpixelImage);
+        mv::events().notifyDatasetDataChanged(_superpixelImage);
 
         });
 
@@ -491,7 +492,7 @@ void SPHPlugin::updateRandomWalkPointSimDataset()
     }
 
     _randomWalkPointSim->setData(std::move(randomWalkPointSims), 1);
-    events().notifyDatasetDataChanged(_randomWalkPointSim);
+    mv::events().notifyDatasetDataChanged(_randomWalkPointSim);
 }
 
 void SPHPlugin::updateAverageDatasets() {
@@ -506,23 +507,23 @@ void SPHPlugin::updateAverageDatasets() {
     std::vector<float> avgDataPixels = mapSuperpixelAverageToPixels(avgDataSuperpixels, _data.getNumPoints(), *_mappingLevelToData);
 
     _avgComponentDataSuper->setData(std::move(avgDataSuperpixels), _data.getNumDimensions());
-    events().notifyDatasetDataChanged(_avgComponentDataSuper);
+    mv::events().notifyDatasetDataChanged(_avgComponentDataSuper);
 
     _avgComponentDataPixel->setData(std::move(avgDataPixels), _data.getNumDimensions());
-    events().notifyDatasetDataChanged(_avgComponentDataPixel);
+    mv::events().notifyDatasetDataChanged(_avgComponentDataPixel);
 }
 
 void SPHPlugin::deselectAll()
 {
     _inputData->getSelection<Points>()->indices.clear();
-    events().notifyDatasetDataSelectionChanged(_inputData);
+    mv::events().notifyDatasetDataSelectionChanged(_inputData);
 }
 
 void SPHPlugin::setEmbeddingInManiVault(const std::vector<float>& emb)
 {
     auto outputDataset = getOutputDataset<Points>();
     outputDataset->setData(emb, 2);
-    events().notifyDatasetDataChanged(outputDataset);
+    mv::events().notifyDatasetDataChanged(outputDataset);
 
     updateColorImage();
 
@@ -722,7 +723,7 @@ void SPHPlugin::computeEmbedding()
             representedDataPoints[i] = std::clamp(representedDataSize, 0.f, 10.f);
         }
         _representSizeDataset->setData(std::move(representedDataPoints), 1);
-        events().notifyDatasetDataChanged(_representSizeDataset);
+        mv::events().notifyDatasetDataChanged(_representSizeDataset);
 
         // _notMergedNotesDataset
         std::vector<float> notMergedNodes(_mappingLevelToData->size(), 0.f);
@@ -738,13 +739,13 @@ void SPHPlugin::computeEmbedding()
                 notMergedNodes[notMergedNodesLevel[i]] = 1.f;
             }
             _notMergedNotesDataset->setData(std::move(notMergedNodes), 1);
-            events().notifyDatasetDataChanged(_notMergedNotesDataset);
+            mv::events().notifyDatasetDataChanged(_notMergedNotesDataset);
         }
         
         // _randomWalkPointSim, only update on selection, init with default 0
         std::vector<float> randomWalkPointSims(_mappingLevelToData->size(), 0.f);
         _randomWalkPointSim->setData(std::move(randomWalkPointSims), 1);
-        events().notifyDatasetDataChanged(_randomWalkPointSim);
+        mv::events().notifyDatasetDataChanged(_randomWalkPointSim);
     }
 
     _computeEmbedding.setPublishExtendsIter(_settingsAction.getTsneSettingsAction().getIterationsPublishExtendAction().getValue());
@@ -934,8 +935,8 @@ PluginTriggerActions SPHPluginFactory::getPluginTriggerActions(const mv::Dataset
 {
     PluginTriggerActions pluginTriggerActions;
 
-    const auto getPluginInstance = [this](const Dataset<Points>& dataset) -> SPHPlugin* {
-        return dynamic_cast<SPHPlugin*>(plugins().requestPlugin(getKind(), { dataset }));
+    const auto getPluginInstance = [this](const mv::Dataset<Points>& dataset) -> SPHPlugin* {
+        return dynamic_cast<SPHPlugin*>(mv::plugins().requestPlugin(getKind(), { dataset }));
     };
 
     if (PluginFactory::areAllDatasetsOfTheSameType(datasets, ImageType)) {
