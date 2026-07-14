@@ -1,6 +1,6 @@
 {
-  "name": "sph-plugin",
-  "version": "0.0.1",
+    "name": "sph-plugin",
+    "version": "0.0.1",
     "dependencies": [
         "annoy",
         "boost-graph",
